@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  asterisk:
+    image: andrius/asterisk
+    container_name: echolink-asterisk
+    ports:
+      - "5060:5060/udp"
+      - "5061:5061/tcp"
+      - "8089:8089"
+    volumes:
+      - ./configs/asterisk/asterisk.conf:/etc/asterisk/asterisk.conf
+      - ./configs/asterisk/modules.conf:/etc/asterisk/modules.conf
+    networks:
+      - echolink-net
+
+  backend:
+    build: ../backend
+    container_name: echolink-backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - asterisk
+    environment:
+      - PORT=3000
+      - ASTERISK_HOST=echolink-asterisk
+      - ASTERISK_PORT=5038
+      - ASTERISK_USER=admin
+      - ASTERISK_PASSWORD=secret
+    networks:
+      - echolink-net
+
+  client:
+    build: ../client
+    container_name: echolink-client
+    depends_on:
+      - backend
+    networks:
+      - echolink-net
+
+networks:
+  echolink-net:
+    driver: bridge
